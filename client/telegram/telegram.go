@@ -3,11 +3,11 @@ package telegram
 import (
 	"encoding/json"
 	"io"
-	"main.go/lib/er"
 	"net/http"
 	"net/url"
 	"path"
 	"strconv"
+	"tgBot/lib/er"
 )
 
 type Client struct {
@@ -21,22 +21,25 @@ const (
 	sendMessageMethod
 )
 
-func New(host, token string) Client { // создает client
-	return Client{
+// New - создает client
+func New(host, token string) *Client {
+	return &Client{
 		host:     host,
 		basePath: newBasePath(token),
 		client:   http.Client{},
 	}
 }
 
+// newBasePath - создает новый путь
 func newBasePath(token string) string { //Если нужно будет создавать еще BasePath то делать будем функц или тг изменит префикс то меняем только тут
 	return "bot" + token // "bot" префикс
 }
 
 // Наш клиент занимается 2 вещами
-// 1 Получает update (новые сообщения)
-// 2 Отправка собственных сообщений
+// 1. Получает update (новые сообщения)
+// 2. Отправка собственных сообщений
 
+// Update - получение новых обновлений
 func (c *Client) Update(offset, limit int) (updates []Update, err error) { // GettingUpdates - getUpdates (tgAPI\site) \ их всегда нужно указывать при вызове метода
 	// Параметры запроса, удобнее это делать с помощью пакета URL
 	defer func() { err = er.WrapIfErr("request error", err) }() // Если исп то нужно в return знач добавить названия (updates []Update)
@@ -60,6 +63,7 @@ func (c *Client) Update(offset, limit int) (updates []Update, err error) { // Ge
 	return res.Result, nil
 }
 
+// SendMessages - отправка сообщений
 func (c *Client) SendMessages(chatID int, text string) error { // аргументы такие потому что в документации так написанно
 	q := url.Values{}
 	q.Add("chatId", strconv.Itoa(chatID))
@@ -70,10 +74,11 @@ func (c *Client) SendMessages(chatID int, text string) error { // аргумен
 	if err != nil {
 		return er.Wrap("can't send message:", err) // Тут просто wrap потому что ошибка 100% есть
 	}
-	
+
 	return nil
 }
 
+// doRequest - создает запрос
 func (c *Client) doRequest(method string, query url.Values) (data []byte, err error) {
 	defer func() { err = er.WrapIfErr("request error", err) }() // работает в конце функции всегда, делает врап ошибки (в обработке)
 	//Сформируем url на который будет наш запрос

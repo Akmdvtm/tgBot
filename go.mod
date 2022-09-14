@@ -1,3 +1,3 @@
-module main.go
+module tgBot
 
 go 1.18

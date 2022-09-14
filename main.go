@@ -3,19 +3,30 @@ package main
 import (
 	"flag"
 	"log"
-	"main.go/client/telegram"
+	tgClient "tgBot/client/telegram"
+	eventConsumer "tgBot/consumer/event-consumer"
+	"tgBot/events/telegram"
+	"tgBot/storage/files"
 )
 
 const (
-	tgBotHost = "api.telegram.org"
+	tgBotHost   = "api.telegram.org"
+	storagePath = "storage"
+	batchSize   = 100
 )
 
 func main() {
-	tgClient := telegram.New(tgBotHost, mustToken()) // инициализировали client, mustToken получает токен
-	//fetcher = fetcher.New(tgClient)
-	//processor = processor.New(tgClient)
-	//
-	//consumer.Start(fetcher, processor)
+	eventsProcessor := telegram.New(
+		tgClient.New(tgBotHost, mustToken()),
+		files.New(storagePath),
+	)
+
+	log.Println("servise started")
+
+	consumer := eventConsumer.New(eventsProcessor, eventsProcessor, batchSize)
+	if err := consumer.Start(); err != nil {
+		log.Fatal()
+	}
 }
 
 func mustToken() string { // must обознач !return err и с ней работать осторожно

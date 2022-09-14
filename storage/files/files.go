@@ -4,11 +4,11 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"main.go/lib/er"
-	"main.go/storage"
 	"math/rand"
 	"os"
 	"path/filepath"
+	"tgBot/lib/er"
+	"tgBot/storage"
 	"time"
 )
 
@@ -20,12 +20,12 @@ const (
 	defaultPerm = 0774 //0774 дает разрешение на чтение и запись
 )
 
-var ErrNoSaved = errors.New("don't have saved pages")
-
-func New(basePath string) Storage { //Функция, которая создает базовый путь
+// New - Функция, которая создает базовый путь
+func New(basePath string) Storage {
 	return Storage{basePath: basePath}
 }
 
+// Save - функция сохранения файлов
 func (s Storage) Save(page *storage.Page) (err error) {
 	defer func() { err = er.WrapIfErr("can't save page", err) }() // способ обработки ошибок
 	//Для начала определимся куда сохраняем наш файл "Путь"
@@ -55,6 +55,7 @@ func (s Storage) Save(page *storage.Page) (err error) {
 	return nil
 }
 
+// PickRandom - функция которая выбирает рандомный файл
 func (s Storage) PickRandom(userName string) (page *storage.Page, err error) {
 	defer func() { err = er.WrapIfErr("can't pick random page", err) }()
 
@@ -65,7 +66,7 @@ func (s Storage) PickRandom(userName string) (page *storage.Page, err error) {
 		return nil, err
 	}
 	if len(files) == 0 { // Проверяем на количество файлов
-		return nil, ErrNoSaved
+		return nil, storage.ErrNoSaved
 	}
 	rand.Seed(time.Now().UnixNano()) // получение рандомного числа опираясь на сид по времени
 	n := rand.Intn(len(files))       // Получили само число
@@ -74,6 +75,7 @@ func (s Storage) PickRandom(userName string) (page *storage.Page, err error) {
 	return s.decodePage(filepath.Join(fPath, file.Name()))
 }
 
+// Remove - функция для удаления файлов
 func (s Storage) Remove(p *storage.Page) error {
 	fileName, err := fileName(p) // Получаем название файла
 	if err != nil {
@@ -90,7 +92,8 @@ func (s Storage) Remove(p *storage.Page) error {
 	return nil
 }
 
-func (s Storage) IsExist(p *storage.Page) (bool, error) {
+// IsExists - функция проверяющая наличие файла
+func (s Storage) IsExists(p *storage.Page) (bool, error) {
 	fileName, err := fileName(p) // Получаем название файла
 	if err != nil {
 		return false, er.Wrap("can't check if file exist", err)
@@ -109,7 +112,8 @@ func (s Storage) IsExist(p *storage.Page) (bool, error) {
 	return true, nil
 }
 
-func (s Storage) decodePage(filepath string) (*storage.Page, error) { //функция для декодирования файла
+// decodePage - функция для декодирования файла
+func (s Storage) decodePage(filepath string) (*storage.Page, error) {
 	f, err := os.Open(filepath) // открываем файл
 	if err != nil {
 		return nil, er.Wrap("can't decode page", err)
@@ -124,6 +128,7 @@ func (s Storage) decodePage(filepath string) (*storage.Page, error) { //функ
 	return &p, err
 }
 
-func fileName(p *storage.Page) (string, error) { // Функция для получения имени файла
+// fileName - Функция для получения имени файла
+func fileName(p *storage.Page) (string, error) {
 	return p.Hash()
 }
